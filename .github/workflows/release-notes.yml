@@ -1,0 +1,59 @@
+name: Generate Release Notes PR
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  REPO_NAME: migration-planner
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-notes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install gren
+        run: npm install -g github-release-notes
+
+      - name: Get latest tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Use the variable via env context
+          TAG=$(gh api repos/kubev2v/migration-planner/tags --jq '.[0].name')
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes to file
+        env:
+          GREN_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Use the variable via env context
+          gren release \
+            --repo migration-planner \
+            > release-notes.md
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          base: main
+          branch: release-notes
+          commit-message: |
+            Update release notes
+          title: "[AUTOMATION] Update release notes"
+          delete-branch: true
