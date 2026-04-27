@@ -147,6 +147,8 @@ For each detected operating system, the report provides:
 | `supported` | Whether the OS is supported for migration by MTV |
 | `upgradeRecommendation` | Recommended OS upgrade path for unsupported operating systems that can be upgraded to a supported version |
 
+> **Note:** The "supported" / "unsupported" OS classification is based on [virt-v2v](https://access.redhat.com/articles/1351473), the conversion tool that MTV (Migration Toolkit for Virtualization) uses under the hood to migrate VMs to KVM for OpenShift Virtualization. An OS marked as "supported" means it has been verified and is officially supported for conversion by virt-v2v. An "unsupported" OS does not necessarily mean the migration will fail -- it means the OS has not been verified by Red Hat and will not have official support from Red Hat experts if issues arise. In many cases, unsupported OS conversions may work fine. For the full list of supported guest operating systems, see [Converting virtual machines from other hypervisors to KVM with virt-v2v](https://access.redhat.com/articles/1351473).
+
 ### Migration Issues
 
 #### Not Migratable Reasons
