@@ -1,10 +1,10 @@
 ---
-title: "Migration Assessment"
+title: "Migration Advisor"
 linkTitle: "Documentation"
 weight: 1
 ---
 
-Migration Assessment helps costumers and consultants evaluate VMware environments for migration to OpenShift Virtualization. Get a comprehensive view of your virtual infrastructure and identify potential migration considerations before you begin.
+Migration Advisor helps customers and consultants evaluate VMware environments for migration to OpenShift Virtualization. Get a comprehensive view of your virtual infrastructure and identify potential migration considerations before you begin.
 
 ## What It Does
 
