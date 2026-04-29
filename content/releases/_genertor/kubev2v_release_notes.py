@@ -21,7 +21,9 @@ Usage:
 
 Markdown defaults to `release-notes-<tag>.md` in the current directory (sanitized for the
 filesystem; falls back to `release-notes.md` if no tag can be resolved). The H1 includes the
-same tag (`--tag` value, or migration-planner’s resolved head tag when using `--latest`).
+same tag (`--tag` value, or migration-planner’s resolved head tag when using `--latest`). The
+Markdown begins with YAML frontmatter (`title`, `linkTitle`, `weight`) for static-site use
+(e.g. Hugo); titles are `release notes v<version>` when a tag is known.
 
 For kubev2v/assisted-migration-agent, commits are compared using the migration-planner
 repository's agent-v2 submodule pointer (at the same planner base/head tags as this run),
@@ -639,12 +641,48 @@ def default_markdown_path(title_tag: str | None) -> str:
     return "release-notes.md"
 
 
+def version_doc_label(tag: str) -> str:
+    """Display version like v0.11.0 (single leading v) for Hugo/docs frontmatter."""
+    t = tag.strip()
+    if not t:
+        return ""
+    if t.startswith("v") or t.startswith("V"):
+        return "v" + t[1:]
+    return "v" + t
+
+
+def frontmatter_doc_title(title_tag: str | None) -> str:
+    """title / linkTitle value: release notes v<target> or release notes when no tag."""
+    if title_tag and str(title_tag).strip():
+        return f"release notes {version_doc_label(str(title_tag).strip())}"
+    return "release notes"
+
+
+def yaml_single_quoted_scalar(s: str) -> str:
+    """YAML single-quoted scalar (escape `'` → `''`)."""
+    return "'" + s.replace("'", "''") + "'"
+
+
+def render_markdown_frontmatter(title_tag: str | None) -> list[str]:
+    """Hugo-compatible metadata (title, linkTitle, weight) above the Markdown body."""
+    doc_title = frontmatter_doc_title(title_tag)
+    title_q = yaml_single_quoted_scalar(doc_title)
+    return [
+        "---",
+        f"title: {title_q}",
+        f"linkTitle: {title_q}",
+        "weight: 2",
+        "---",
+        "",
+    ]
+
+
 def render_markdown(results: list[RepoResult], title_tag: str | None = None) -> str:
     overview = build_global_release_overview(results)
     h1 = "# Migration Planner — combined release notes"
     if title_tag:
         h1 = f"{h1} — `{title_tag}`"
-    lines: list[str] = [
+    lines = render_markdown_frontmatter(title_tag) + [
         h1,
         "",
         "## Release overview",

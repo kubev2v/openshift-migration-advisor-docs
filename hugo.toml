@@ -33,9 +33,9 @@ theme = 'docsy'
     weight = 10
     url = "/docs/"
   [[menu.main]]
-      name = "Release Notes"
-      weight = 10
-      url = "/releases/"
+    name = "Release Notes"
+    weight = 10
+    url = "/releases/"
   [[menu.main]]
     name = "Blog"
     weight = 20
