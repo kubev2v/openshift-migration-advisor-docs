@@ -35,6 +35,7 @@ If these are missing, the upload will **fail**. All of these reside in the **vIn
 | Column **VM ID** must not be null/empty | Used as the primary unique identifier for VMs |
 | Column **VM** (Name) must not be null/empty | Used to identify and display the VM |
 | Column **CLUSTER** must not be null/empty | Used to group VMs by clusters |
+| Column **VI SDK UUID** must not be null/empty | Required to identify your vCenter.            |
 
 #### Soft Requirements (Warnings)
 
