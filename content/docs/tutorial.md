@@ -53,7 +53,8 @@ The following sheets are checked, but if they are empty or missing, the tool wil
 
 Export your RVTools data with **all sheets enabled** to ensure the most comprehensive migration assessment. 
 
-[Watch the Demo](https://interact.redhat.com/share/pkPLJELVr45LbdXg3InF)
+[If the demo doesn't load, please use this link](https://interact.redhat.com/share/pkPLJELVr45LbdXg3InF)
+
 ---
 
 ## Discovery Agent Flow
@@ -62,5 +63,6 @@ Deploy a discovery agent to your vCenter for live environment analysis. Watch th
 
 <iframe width="700px" height="400px" src="https://interact.redhat.com/share/kEinYphM8Zyt7wXLys53?mode=videoOnly" title="Configure OpenShift Migration Advisor Agent Flow in Red Hat" frameborder="0" referrerpolicy="unsafe-url" allowfullscreen="true" allow="clipboard-write" sandbox="allow-popups allow-popups-to-escape-sandbox allow-scripts allow-forms allow-same-origin allow-presentation" style="border-radius: 10px"></iframe>
 
-[Watch the Demo](https://interact.redhat.com/share/kEinYphM8Zyt7wXLys53)
+[If the demo doesn't load, please use this link.](https://interact.redhat.com/share/kEinYphM8Zyt7wXLys53)
+
 
