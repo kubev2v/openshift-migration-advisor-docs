@@ -1,7 +1,8 @@
 ---
 title: "release notes v0.13.6"
 linkTitle: "release notes v0.13.6"
-weight: 1
+weight: 2
+type: docs
 ---
 
 # Migration Planner — release notes — `v0.13.6`
