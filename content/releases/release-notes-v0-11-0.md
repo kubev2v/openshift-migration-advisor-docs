@@ -1,7 +1,7 @@
 ---
 title: "release notes v0.11.0"
 linkTitle: "release notes v0.11.0"
-weight: 3
+weight: 10
 ---
 
 # Migration Planner — combined release notes — `0.11.0`
