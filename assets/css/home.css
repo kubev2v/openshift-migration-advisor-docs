@@ -1,0 +1,41 @@
+/* Home page styles */
+
+.td-navbar {
+  --td-navbar-bg-color: var(--bs-body-bg-rgb);
+  background-color: rgb(var(--td-navbar-bg-color));
+}
+
+.td-navbar .td-search-input,
+.td-navbar input[type="search"],
+.td-navbar .form-control {
+  background: var(--bs-gray-200);
+}
+
+.remove-padding {
+  margin-left: calc(-1 * var(--bs-gutter-x) * 0.5);
+  margin-right: calc(-1 * var(--bs-gutter-x) * 0.5);
+}
+
+.hero-section {
+  padding-top: 12rem !important;
+  padding-bottom: 12rem !important;
+}
+
+.what-section {
+  padding-top: 8rem;
+  padding-bottom: 8rem;
+}
+
+.feature-section {
+  padding-top: 10rem;
+  padding-bottom: 10rem;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+

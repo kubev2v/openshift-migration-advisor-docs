@@ -1,0 +1,5 @@
+{{ $homeCSS := resources.Get "css/home.css" }}
+{{ if $homeCSS }}
+  {{ $homeCSS := $homeCSS | resources.Minify }}
+  <link rel="stylesheet" href="{{ $homeCSS.RelPermalink }}">
+{{ end }}
