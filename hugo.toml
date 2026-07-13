@@ -1,5 +1,5 @@
 baseURL = 'https://example.org/'
-languageCode = 'en-us'
+locale = 'en-us'
 title = 'OpenShift Migration Advisor'
 theme = 'docsy'
 canonifyURLs = true
@@ -38,18 +38,18 @@ canonifyURLs = true
     weight = 10
     url = "/releases/"
   [[menu.main]]
-    name = "Blog"
+    name = "Github"
     weight = 20
-    url = "/blog/"
+    url = "https://github.com/kubev2v/migration-planner"
 
 [markup]
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
   [markup.goldmark.renderHooks.image]
-    enableDefault = true
+    useEmbedded = "fallback"
   [markup.goldmark.renderHooks.link]
-    enableDefault = true
+    useEmbedded = "fallback"
   [markup.tableOfContents]
     endLevel = 4
     ordered = false

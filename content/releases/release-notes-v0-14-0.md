@@ -1,7 +1,7 @@
 ---
 title: "release notes v0.14.0"
 linkTitle: "release notes v0.14.0"
-weight: 2
+weight: 1
 type: docs
 ---
 
