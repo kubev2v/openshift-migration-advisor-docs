@@ -1,11 +1,11 @@
 ---
 title: "release notes v0.13.5"
 linkTitle: "release notes v0.13.5"
-weight: 3
+date: 2026-06-08
 type: docs
 ---
 
-# Migration Planner — release notes — `v0.13.5`
+# OpenShift Migration Advisor — release notes — `v0.13.5`
 
 Compare: `v0.13.4` → `v0.13.5`
 
