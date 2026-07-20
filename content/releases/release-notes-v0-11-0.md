@@ -1,10 +1,10 @@
 ---
 title: "release notes v0.11.0"
 linkTitle: "release notes v0.11.0"
-weight: 10
+date: 2026-04-15
 ---
 
-# Migration Planner — combined release notes — `0.11.0`
+# OpenShift Migration Advisor — combined release notes — `0.11.0`
 
 ## Release overview
 

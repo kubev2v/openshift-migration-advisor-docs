@@ -1,7 +1,7 @@
 ---
-title: "OpenShift Migration Advisor — release notes — v0.19.0"
+title: "release notes v0.19.0"
 linkTitle: "release notes v0.19.0"
-weight: 2
+date: 2026-07-20
 type: docs
 ---
 
