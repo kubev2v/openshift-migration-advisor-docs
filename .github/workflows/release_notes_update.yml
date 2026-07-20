@@ -1,0 +1,207 @@
+name: React to Release Notes Update
+
+on:
+  repository_dispatch:
+    types: [release_notes_update]
+
+permissions:
+  contents: read
+
+jobs:
+  create-release-notes-pr:
+    if: github.event.client_payload.repo == 'kubev2v/migration-planner'
+    concurrency:
+      group: release-notes-update
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    env:
+      AI_ENDPOINT: "https://generativelanguage.googleapis.com/v1beta/openai"
+      AI_MODEL: "gemini-2.5-flash"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read payload
+        id: payload
+        env:
+          TAG: ${{ github.event.client_payload.tag }}
+          PREV_TAG: ${{ github.event.client_payload.prev_tag }}
+          REPO: ${{ github.event.client_payload.repo }}
+        run: |
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "prev_tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
+          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
+
+          VERSION=$(echo "$TAG" | tr '.' '-')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "filename=release-notes-${VERSION}.md" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch diffs from all repos
+        id: diffs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.payload.outputs.tag }}
+          PREV_TAG: ${{ steps.payload.outputs.prev_tag }}
+          AGENT_OLD_SHA: ${{ github.event.client_payload.agent_old_sha }}
+          AGENT_NEW_SHA: ${{ github.event.client_payload.agent_new_sha }}
+          AGENT_UI_OLD_SHA: ${{ github.event.client_payload.agent_ui_old_sha }}
+          AGENT_UI_NEW_SHA: ${{ github.event.client_payload.agent_ui_new_sha }}
+        run: |
+          # migration-planner diff
+          PLANNER_DIFF=$(gh api "repos/kubev2v/migration-planner/compare/${PREV_TAG}...${TAG}" \
+            -H "Accept: application/vnd.github.diff" 2>/dev/null || echo "Could not fetch planner diff")
+
+          # assisted-migration-agent diff
+          if [ -n "$AGENT_OLD_SHA" ] && [ -n "$AGENT_NEW_SHA" ] && [ "$AGENT_OLD_SHA" != "$AGENT_NEW_SHA" ]; then
+            AGENT_DIFF=$(gh api "repos/kubev2v/assisted-migration-agent/compare/${AGENT_OLD_SHA}...${AGENT_NEW_SHA}" \
+              -H "Accept: application/vnd.github.diff" 2>/dev/null || echo "Could not fetch agent diff")
+          else
+            AGENT_DIFF="No agent changes in this release"
+          fi
+
+          # migration-planner-agent-ui diff
+          if [ -n "$AGENT_UI_OLD_SHA" ] && [ -n "$AGENT_UI_NEW_SHA" ] && [ "$AGENT_UI_OLD_SHA" != "$AGENT_UI_NEW_SHA" ]; then
+            AGENT_UI_DIFF=$(gh api "repos/kubev2v/migration-planner-agent-ui/compare/${AGENT_UI_OLD_SHA}...${AGENT_UI_NEW_SHA}" \
+              -H "Accept: application/vnd.github.diff" 2>/dev/null || echo "Could not fetch agent-ui diff")
+          else
+            AGENT_UI_DIFF="No agent-ui changes in this release"
+          fi
+
+          # migration-planner-ui-app diff
+          UI_APP_DIFF=$(gh api "repos/kubev2v/migration-planner-ui-app/compare/${PREV_TAG}...${TAG}" \
+            -H "Accept: application/vnd.github.diff" 2>/dev/null || echo "No ui-app changes found for this tag range")
+
+          # Write diffs to files to avoid shell escaping issues
+          echo "$PLANNER_DIFF" > /tmp/planner.diff
+          echo "$AGENT_DIFF" > /tmp/agent.diff
+          echo "$AGENT_UI_DIFF" > /tmp/agent-ui.diff
+          echo "$UI_APP_DIFF" > /tmp/ui-app.diff
+
+      - name: Generate release notes with AI
+        id: ai-notes
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.payload.outputs.tag }}
+          PREV_TAG: ${{ steps.payload.outputs.prev_tag }}
+        run: |
+          SKILL_CONTENT=$(gh api repos/kubev2v/migration-planner/contents/skills/release-notes.md --jq '.content' | base64 -d)
+
+          cat > /tmp/system_prompt.txt <<SEOF
+          You are a technical writer. Follow the instructions below to generate customer-facing release notes.
+
+          Output ONLY the release notes content in markdown (no extra commentary). Use these sections:
+          ## Enhancements
+          ## Bug Fixes
+
+          Each note should start with a bold short summary: **Short summary.** Longer explanation.
+          If there are no enhancements or no bug fixes, omit that section entirely.
+          If there are no user-facing changes at all, output exactly: No user-facing changes in this release.
+
+          ${SKILL_CONTENT}
+          SEOF
+
+          cat > /tmp/user_prompt.txt <<UEOF
+          Generate release notes for version ${TAG} (comparing ${PREV_TAG} → ${TAG}).
+
+          Below are the full code diffs from all repositories in this release. Analyze the actual code changes to determine what is user-facing.
+
+          ## migration-planner diff:
+          $(cat /tmp/planner.diff)
+
+          ## assisted-migration-agent diff:
+          $(cat /tmp/agent.diff)
+
+          ## migration-planner-agent-ui diff:
+          $(cat /tmp/agent-ui.diff)
+
+          ## migration-planner-ui-app diff:
+          $(cat /tmp/ui-app.diff)
+          UEOF
+
+          jq -n \
+            --arg model "$AI_MODEL" \
+            --rawfile system /tmp/system_prompt.txt \
+            --rawfile user /tmp/user_prompt.txt \
+            '{
+              model: $model,
+              messages: [
+                { role: "system", content: $system },
+                { role: "user", content: $user }
+              ],
+              max_tokens: 4096,
+              temperature: 0.3
+            }' > /tmp/payload.json
+
+          RESPONSE=$(curl -sS -f --max-time 300 \
+            "${AI_ENDPOINT}/chat/completions" \
+            -H "Authorization: Bearer ${GEMINI_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d @/tmp/payload.json)
+
+          AI_CONTENT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+
+          if [ -z "$AI_CONTENT" ] || [ "$AI_CONTENT" = "null" ]; then
+            echo "::error::Empty response from AI"
+            echo "Response: $RESPONSE"
+            exit 1
+          fi
+
+          echo "Generated release notes:"
+          echo "$AI_CONTENT"
+
+          {
+            echo "content<<AINOTES_EOF"
+            echo "$AI_CONTENT"
+            echo "AINOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create release notes file
+        env:
+          TAG: ${{ steps.payload.outputs.tag }}
+          PREV_TAG: ${{ steps.payload.outputs.prev_tag }}
+          FILENAME: ${{ steps.payload.outputs.filename }}
+          RELEASE_NOTES: ${{ steps.ai-notes.outputs.content }}
+        run: |
+          DOC_TITLE="release notes ${TAG}"
+          FILE_PATH="content/releases/${FILENAME}"
+
+          cat > "$FILE_PATH" <<EOF
+          ---
+          title: '${DOC_TITLE}'
+          linkTitle: '${DOC_TITLE}'
+          weight: 2
+          type: docs
+          ---
+
+          # Migration Planner — release notes — \`${TAG}\`
+
+          Compare: \`${PREV_TAG}\` → \`${TAG}\`
+
+          EOF
+
+          printf '%s\n' "$RELEASE_NOTES" >> "$FILE_PATH"
+
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.MIGRATION_PLANNER_SYNC_APP_ID }}
+          private-key: ${{ secrets.MIGRATION_PLANNER_SYNC_APP_PRIVATE_KEY }}
+          owner: kubev2v
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          branch: "update-release-notes-${{ steps.payload.outputs.version }}"
+          commit-message: |
+            NO-JIRA | docs: Add release notes for ${{ steps.payload.outputs.tag }}
+          title: "[AUTOMATION] Release notes for ${{ steps.payload.outputs.tag }}"
+          body: |
+            Auto-generated release notes for ${{ steps.payload.outputs.tag }} using AI.
+
+            Triggered by ${{ steps.payload.outputs.repo }}.
+
+            **Please review the generated notes before merging.**
+          delete-branch: true
